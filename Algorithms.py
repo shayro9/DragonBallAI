@@ -12,7 +12,7 @@ class BFSAgent():
     def search(self, env: DragonBallEnv) -> Tuple[List[int], float, int]:
         agent = env.get_initial_state()
         if env.is_final_state(agent):
-            return [], 0,0 #TODO:return
+            return [], 0,0
         open_nodes = [agent]
         closed_nodes = []
         price_dict = {agent: [0, []]}
@@ -34,7 +34,7 @@ class BFSAgent():
                     price_dict[new_child] = [new_value, actions_untill_now]
                     print(f"for the node: {new_child} we have the price: {new_value}\n")
                     if env.is_final_state(new_child):
-                        return price_dict[new_child][1], new_value, len(closed_nodes)    #TODO:return
+                        return price_dict[new_child][1], new_value, len(closed_nodes)
                     open_nodes.insert(0, new_child)
 
 
