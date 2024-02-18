@@ -4,6 +4,7 @@ from DragonBallEnv import DragonBallEnv
 from typing import List, Tuple
 import heapdict
 
+
 class BFSAgent():
     def __init__(self) -> None:
         pass
@@ -37,51 +38,92 @@ class BFSAgent():
                             return price_dict[new_child][1], new_value, len(closed_nodes)
                         open_nodes.insert(0, new_child)
 
+
 class AStarNode:
-    def __init__(self, state, parent, g, f):
+    def __init__(self, state, parent, action, g, f):
         self.state = state
         self.parent = parent
+        self.action = action
         self.g = g
         self.f = f
 
+    def get_path(self):
+        path = []
+        n = self
+        while n.parent is not None:
+            path.append(n.action)
+            n = n.parent
+        return path
+
     def __eq__(self, other):
         return self.state == other.state
+
+    def __gt__(self, other):
+        if self.f == other.f:
+            return self.state[0] > other.state[0]
+        return self.f > other.f
+
+    def __hash__(self):
+        return hash(self.state)
+
 
 class WeightedAStarAgent():
     def __init__(self) -> None:
         self.cols = 0
         self.heuristic_targets = []
 
-
-    def manhatan_dist(self, s, g):
+    def manhattan_dist(self, s, g):
         row_dist = abs(s // self.cols - g // self.cols)
         col_dist = abs(s % self.cols - g % self.cols)
         return row_dist + col_dist
 
     def msap_heuristic(self, state):
-        ops = [self.manhatan_dist(state[0], g) for g in self._heuristic_targets]
+        ops = [self.manhattan_dist(state, g) for g in self.heuristic_targets]
         return min(ops)
 
     def search(self, env: DragonBallEnv, h_weight) -> Tuple[List[int], float, int]:
         self.cols = env.ncol
-        self._heuristic_targets = [a[0] for a in env.get_goal_states()] + [env.d1[0], env.d2[0]]
-        start = env.get_initial_state()
-        node = self.AStarNode(start, None, 0, h_weight * self.msap_heuristic(start[0]))
+        self.heuristic_targets = [a[0] for a in env.get_goal_states()] + [env.d1[0], env.d2[0]]
+        agent = env.get_initial_state()
 
         open_nodes = heapdict.heapdict()
-        h = self.msap_heuristic(start[0])
-        open_nodes[node] = h_weight * h + (1-h_weight) * node.g
+        h = self.msap_heuristic(agent[0])
+        node = AStarNode(agent, None, 0, 0, h_weight * h)
+        open_nodes[agent] = node
+        closed_nodes = {}
 
-        closed_nodes = heapdict.heapdict()
         while open_nodes:
-            curr, f_value = open_nodes.popitem()
-            closed_nodes[curr] = f_value
-            if env.is_final_state(curr):
-                return #TODO
-            for action, child in env.succ(curr):
-                new_g = curr.g + child[1]
-                new_f = new_g + self.msap_heuristic(curr[0])
-                child_node = node()
+            agent, curr_node = open_nodes.popitem()
+            closed_nodes[agent] = curr_node
+            if env.is_final_state(agent):
+                path = curr_node.get_path()
+                return path, curr_node.g, len(closed_nodes)
+            for action, succ in env.succ(agent).items():
+                env.reset()
+                env.set_state(agent)
+                new_step = env.step(action)
+                child_state = new_step[0]
+
+                cost = succ[1]
+
+                new_g = curr_node.g + cost
+                new_f = (1 - h_weight) * new_g + h_weight * self.msap_heuristic(child_state[0])
+
+                if child_state not in open_nodes.keys() and child_state not in closed_nodes.keys():
+                    new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
+                    open_nodes[child_state] = new_node
+
+                elif child_state in open_nodes.keys():
+                    new_node = open_nodes[child_state]
+                    if new_f > new_node.f:
+                        new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
+                        open_nodes[child_state] = new_node
+                elif child_state in closed_nodes.keys():
+                    new_node = closed_nodes[child_state]
+                    if new_f < new_node.f:
+                        new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
+                        open_nodes[child_state] = new_node
+                        closed_nodes.pop(child_state)
 
 
 
