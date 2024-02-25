@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 from DragonBallEnv import DragonBallEnv
@@ -36,7 +38,7 @@ class BFSAgent():
                     if env.is_final_state(new_child):
                         return price_dict[new_child][1], new_value, len(closed_nodes)
                     open_nodes.insert(0, new_child)
-        return [], 0, 0
+        return [], math.inf, len(closed_nodes)
 
 
 class AStarNode:
@@ -91,6 +93,7 @@ class WeightedAStarAgent():
         node = AStarNode(agent, None, 0, 0, h_weight * h)
         open_nodes[agent] = node
         closed_nodes = {}
+        goals = [g[0] for g in env.get_goal_states()]
 
         while open_nodes:
             agent, curr_node = open_nodes.popitem()
@@ -101,7 +104,7 @@ class WeightedAStarAgent():
             for action, succ in env.succ(agent).items():
                 env.reset()
                 env.set_state(agent)
-                if succ[0] is None:
+                if succ[0] is None or agent[0] in goals:
                     continue
                 new_step = env.step(action)
                 child_state = new_step[0]
@@ -119,7 +122,7 @@ class WeightedAStarAgent():
 
                 elif child_state in open_nodes.keys():
                     new_node = open_nodes[child_state]
-                    if new_f > new_node.f:
+                    if new_f < new_node.f:
                         new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
                         open_nodes[child_state] = new_node
                 elif child_state in closed_nodes.keys():
@@ -128,7 +131,8 @@ class WeightedAStarAgent():
                         new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
                         open_nodes[child_state] = new_node
                         closed_nodes.pop(child_state)
-        return [], 0, 0
+        print(sorted([g[0] for g in closed_nodes]))
+        return [], 0, len(closed_nodes)
 
 
 class AStarEpsilonNode:
@@ -182,6 +186,7 @@ class AStarEpsilonAgent():
         node = AStarEpsilonNode(agent, None, 0, 0, h)
         open_nodes[agent] = node
         closed_nodes = {}
+        goals = [g[0] for g in env.get_goal_states()]
 
         while open_nodes:
             min_f = min([v.f for v in open_nodes.values()])
@@ -197,7 +202,7 @@ class AStarEpsilonAgent():
             for action, succ in env.succ(agent).items():
                 env.reset()
                 env.set_state(agent)
-                if succ[0] is None:
+                if succ[0] is None or agent[0] in goals:
                     continue
                 new_step = env.step(action)
                 child_state = new_step[0]
@@ -214,7 +219,7 @@ class AStarEpsilonAgent():
 
                 elif child_state in open_nodes.keys():
                     new_node = open_nodes[child_state]
-                    if new_f > new_node.f:
+                    if new_f < new_node.f:
                         new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
                         open_nodes[child_state] = new_node
                 elif child_state in closed_nodes.keys():
