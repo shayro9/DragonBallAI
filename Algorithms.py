@@ -103,6 +103,7 @@ class WeightedAStarAgent():
             d1 = [env.d1[0]] if not agent[1] else []
             d2 = [env.d2[0]] if not agent[2] else []
             self.heuristic_targets = g + d1 + d2
+
             closed_nodes[agent] = curr_node
             if env.is_final_state(agent):
                 path = curr_node.get_path()
