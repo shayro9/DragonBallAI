@@ -85,8 +85,10 @@ class WeightedAStarAgent():
 
     def search(self, env: DragonBallEnv, h_weight) -> Tuple[List[int], float, int]:
         self.cols = env.ncol
-        self.heuristic_targets = [a[0] for a in env.get_goal_states()] + [env.d1[0], env.d2[0]]
         agent = env.get_initial_state()
+        self.heuristic_targets = ([a[0] for a in env.get_goal_states()]
+                                  + [env.d1[0]] if not agent[1] else []
+                                                                     + [env.d2[0]] if not agent[2] else [])
 
         open_nodes = heapdict.heapdict()
         h = self.msap_heuristic(agent[0])
@@ -97,6 +99,10 @@ class WeightedAStarAgent():
 
         while open_nodes:
             agent, curr_node = open_nodes.popitem()
+            g = [a[0] for a in env.get_goal_states()]
+            d1 = [env.d1[0]] if not agent[1] else []
+            d2 = [env.d2[0]] if not agent[2] else []
+            self.heuristic_targets = g + d1 + d2
             closed_nodes[agent] = curr_node
             if env.is_final_state(agent):
                 path = curr_node.get_path()
@@ -177,8 +183,11 @@ class AStarEpsilonAgent():
 
     def search(self, env: DragonBallEnv, epsilon: int) -> Tuple[List[int], float, int]:
         self.cols = env.ncol
-        self.heuristic_targets = [a[0] for a in env.get_goal_states()] + [env.d1[0], env.d2[0]]
         agent = env.get_initial_state()
+        g = [a[0] for a in env.get_goal_states()]
+        d1 = [env.d1[0]] if not agent[1] else []
+        d2 = [env.d2[0]] if not agent[2] else []
+        self.heuristic_targets = g + d1 + d2
 
         open_nodes = heapdict.heapdict()
         focal = heapdict.heapdict()
@@ -194,6 +203,11 @@ class AStarEpsilonAgent():
                 if n.f <= (1 + epsilon) * min_f:
                     focal[s] = n
             agent, curr_node = focal.popitem()
+            g = [a[0] for a in env.get_goal_states()]
+            d1 = [env.d1[0]] if not agent[1] else []
+            d2 = [env.d2[0]] if not agent[2] else []
+            self.heuristic_targets = g + d1 + d2
+
             open_nodes.pop(agent)
             closed_nodes[agent] = curr_node
             if env.is_final_state(agent):
