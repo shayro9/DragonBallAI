@@ -87,27 +87,25 @@ class WeightedAStarAgent():
         self.cols = env.ncol
         agent = env.get_initial_state()
         self.heuristic_targets = ([a[0] for a in env.get_goal_states()]
-                                  + [env.d1[0]] if not agent[1] else []
-                                                                     + [env.d2[0]] if not agent[2] else [])
-
-        open_nodes = heapdict.heapdict()
+                                  + [env.d1[0]] if not agent[1] else [] + [env.d2[0]] if not agent[2] else [])
         h = self.msap_heuristic(agent[0])
         node = AStarNode(agent, None, 0, 0, h_weight * h)
+        open_nodes = heapdict.heapdict()
         open_nodes[agent] = node
         closed_nodes = {}
+        popped_closed_nodes = 0
         goals = [g[0] for g in env.get_goal_states()]
 
         while open_nodes:
             agent, curr_node = open_nodes.popitem()
-            g = [a[0] for a in env.get_goal_states()]
             d1 = [env.d1[0]] if not agent[1] else []
             d2 = [env.d2[0]] if not agent[2] else []
-            self.heuristic_targets = g + d1 + d2
+            self.heuristic_targets = goals + d1 + d2
 
             closed_nodes[agent] = curr_node
             if env.is_final_state(agent):
                 path = curr_node.get_path()
-                return path, curr_node.g, len(closed_nodes)
+                return path, curr_node.g, len(closed_nodes) + popped_closed_nodes
             for action, succ in env.succ(agent).items():
                 env.reset()
                 env.set_state(agent)
@@ -138,8 +136,10 @@ class WeightedAStarAgent():
                         new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
                         open_nodes[child_state] = new_node
                         closed_nodes.pop(child_state)
+                        popped_closed_nodes += 1
+
         print(sorted([g[0] for g in closed_nodes]))
-        return [], 0, len(closed_nodes)
+        return [], 0, (len(closed_nodes)+popped_closed_nodes)
 
 
 class AStarEpsilonNode:
@@ -196,6 +196,7 @@ class AStarEpsilonAgent():
         node = AStarEpsilonNode(agent, None, 0, 0, h)
         open_nodes[agent] = node
         closed_nodes = {}
+        popped_closed_nodes = 0
         goals = [g[0] for g in env.get_goal_states()]
 
         while open_nodes:
@@ -213,7 +214,7 @@ class AStarEpsilonAgent():
             closed_nodes[agent] = curr_node
             if env.is_final_state(agent):
                 path = curr_node.get_path()
-                return path, curr_node.g, len(closed_nodes)
+                return path, curr_node.g, len(closed_nodes) + popped_closed_nodes
             for action, succ in env.succ(agent).items():
                 env.reset()
                 env.set_state(agent)
@@ -243,4 +244,6 @@ class AStarEpsilonAgent():
                         new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
                         open_nodes[child_state] = new_node
                         closed_nodes.pop(child_state)
+                        popped_closed_nodes += 1
+
         return [], 0, 0
