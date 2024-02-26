@@ -6,6 +6,8 @@ from DragonBallEnv import DragonBallEnv
 from typing import List, Tuple
 import heapdict
 
+PRECISION = 100
+
 
 class BFSAgent():
     def __init__(self) -> None:
@@ -84,12 +86,13 @@ class WeightedAStarAgent():
         return min(ops)
 
     def search(self, env: DragonBallEnv, h_weight) -> Tuple[List[int], float, int]:
+        w = PRECISION * h_weight
         self.cols = env.ncol
         agent = env.get_initial_state()
         self.heuristic_targets = ([a[0] for a in env.get_goal_states()]
                                   + [env.d1[0]] if not agent[1] else [] + [env.d2[0]] if not agent[2] else [])
         h = self.msap_heuristic(agent[0])
-        node = AStarNode(agent, None, 0, 0, h_weight * h)
+        node = AStarNode(agent, None, 0, 0, w * h)
         open_nodes = heapdict.heapdict()
         open_nodes[agent] = node
         closed_nodes = {}
@@ -117,8 +120,8 @@ class WeightedAStarAgent():
                 cost = succ[1]
 
                 new_g = curr_node.g + cost
-                x = h_weight * self.msap_heuristic(child_state[0])
-                y = 0 if h_weight == 1 else (1 - h_weight) * new_g
+                x = w * self.msap_heuristic(child_state[0])
+                y = 0 if w == PRECISION else (PRECISION - w) * new_g
                 new_f = y + x
 
                 if child_state not in open_nodes.keys() and child_state not in closed_nodes.keys():
@@ -139,7 +142,7 @@ class WeightedAStarAgent():
                         popped_closed_nodes += 1
 
         print(sorted([g[0] for g in closed_nodes]))
-        return [], 0, (len(closed_nodes)+popped_closed_nodes)
+        return [], 0, (len(closed_nodes) + popped_closed_nodes)
 
 
 class AStarEpsilonNode:
