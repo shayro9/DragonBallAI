@@ -6,7 +6,7 @@ from DragonBallEnv import DragonBallEnv
 from typing import List, Tuple
 import heapdict
 
-PRECISION = 100
+PRECISION = 1
 
 
 class BFSAgent():
@@ -40,7 +40,7 @@ class BFSAgent():
                     if env.is_final_state(new_child):
                         return price_dict[new_child][1], new_value, len(closed_nodes)
                     open_nodes.insert(0, new_child)
-        return [], math.inf, len(closed_nodes)
+        return [], 0, 0
 
 
 class AStarNode:
@@ -89,26 +89,26 @@ class WeightedAStarAgent():
         w = PRECISION * h_weight
         self.cols = env.ncol
         agent = env.get_initial_state()
-        self.heuristic_targets = ([a[0] for a in env.get_goal_states()]
-                                  + [env.d1[0]] if not agent[1] else [] + [env.d2[0]] if not agent[2] else [])
+
+        goals = [g[0] for g in env.get_goal_states()]
+        d1 = [env.d1[0]] if not agent[1] else []
+        d2 = [env.d2[0]] if not agent[2] else []
+        self.heuristic_targets = goals + d1 + d2
         h = self.msap_heuristic(agent[0])
+
         node = AStarNode(agent, None, 0, 0, w * h)
         open_nodes = heapdict.heapdict()
         open_nodes[agent] = node
         closed_nodes = {}
         popped_closed_nodes = 0
-        goals = [g[0] for g in env.get_goal_states()]
-
         while open_nodes:
             agent, curr_node = open_nodes.popitem()
-            d1 = [env.d1[0]] if not agent[1] else []
-            d2 = [env.d2[0]] if not agent[2] else []
-            self.heuristic_targets = goals + d1 + d2
 
-            closed_nodes[agent] = curr_node
             if env.is_final_state(agent):
                 path = curr_node.get_path()
                 return path, curr_node.g, len(closed_nodes) + popped_closed_nodes
+
+            closed_nodes[agent] = curr_node
             for action, succ in env.succ(agent).items():
                 env.reset()
                 env.set_state(agent)
@@ -118,6 +118,10 @@ class WeightedAStarAgent():
                 child_state = new_step[0]
 
                 cost = succ[1]
+
+                d1 = [env.d1[0]] if not child_state[1] else []
+                d2 = [env.d2[0]] if not child_state[2] else []
+                self.heuristic_targets = goals + d1 + d2
 
                 new_g = curr_node.g + cost
                 x = w * self.msap_heuristic(child_state[0])
@@ -141,8 +145,7 @@ class WeightedAStarAgent():
                         closed_nodes.pop(child_state)
                         popped_closed_nodes += 1
 
-        print(sorted([g[0] for g in closed_nodes]))
-        return [], 0, (len(closed_nodes) + popped_closed_nodes)
+        return [], 0, 0
 
 
 class AStarEpsilonNode:
@@ -188,6 +191,7 @@ class AStarEpsilonAgent():
     def search(self, env: DragonBallEnv, epsilon: int) -> Tuple[List[int], float, int]:
         self.cols = env.ncol
         agent = env.get_initial_state()
+
         g = [a[0] for a in env.get_goal_states()]
         d1 = [env.d1[0]] if not agent[1] else []
         d2 = [env.d2[0]] if not agent[2] else []
@@ -200,7 +204,6 @@ class AStarEpsilonAgent():
         open_nodes[agent] = node
         closed_nodes = {}
         popped_closed_nodes = 0
-        goals = [g[0] for g in env.get_goal_states()]
 
         while open_nodes:
             min_f = min([v.f for v in open_nodes.values()])
@@ -208,23 +211,23 @@ class AStarEpsilonAgent():
                 if n.f <= (1 + epsilon) * min_f:
                     focal[s] = n
             agent, curr_node = focal.popitem()
-            g = [a[0] for a in env.get_goal_states()]
-            d1 = [env.d1[0]] if not agent[1] else []
-            d2 = [env.d2[0]] if not agent[2] else []
-            self.heuristic_targets = g + d1 + d2
 
             open_nodes.pop(agent)
-            closed_nodes[agent] = curr_node
             if env.is_final_state(agent):
                 path = curr_node.get_path()
                 return path, curr_node.g, len(closed_nodes) + popped_closed_nodes
+            closed_nodes[agent] = curr_node
             for action, succ in env.succ(agent).items():
                 env.reset()
                 env.set_state(agent)
-                if succ[0] is None or agent[0] in goals:
+                if succ[0] is None or agent[0] in g:
                     continue
                 new_step = env.step(action)
                 child_state = new_step[0]
+
+                d1 = [env.d1[0]] if not child_state[1] else []
+                d2 = [env.d2[0]] if not child_state[2] else []
+                self.heuristic_targets = g + d1 + d2
 
                 cost = succ[1]
 
