@@ -38,7 +38,7 @@ class BFSAgent():
                     actions_untill_now.append(action)
                     price_dict[new_child] = [new_value, actions_untill_now]
                     if env.is_final_state(new_child):
-                        return price_dict[new_child][1], new_value, len(closed_nodes)
+                        return price_dict[new_child][1], int(new_value), len(closed_nodes)
                     open_nodes.insert(0, new_child)
         return [], 0, 0
 
@@ -106,7 +106,7 @@ class WeightedAStarAgent():
 
             if env.is_final_state(agent):
                 path = curr_node.get_path()
-                return path, curr_node.g, len(closed_nodes) + popped_closed_nodes
+                return path, int(curr_node.g), len(closed_nodes) + popped_closed_nodes
 
             closed_nodes[agent] = curr_node
             for action, succ in env.succ(agent).items():
@@ -168,6 +168,8 @@ class AStarEpsilonNode:
         return self.state == other.state
 
     def __gt__(self, other):
+        if self.g == other.g:
+            return self.state[0] > other.state[0]
         return self.g > other.g
 
     def __hash__(self):
@@ -198,7 +200,6 @@ class AStarEpsilonAgent():
         self.heuristic_targets = g + d1 + d2
 
         open_nodes = heapdict.heapdict()
-        focal = heapdict.heapdict()
         h = self.msap_heuristic(agent[0])
         node = AStarEpsilonNode(agent, None, 0, 0, h)
         open_nodes[agent] = node
@@ -207,6 +208,7 @@ class AStarEpsilonAgent():
 
         while open_nodes:
             min_f = min([v.f for v in open_nodes.values()])
+            focal = heapdict.heapdict()
             for s, n in open_nodes.items():
                 if n.f <= (1 + epsilon) * min_f:
                     focal[s] = n
@@ -215,7 +217,7 @@ class AStarEpsilonAgent():
             open_nodes.pop(agent)
             if env.is_final_state(agent):
                 path = curr_node.get_path()
-                return path, curr_node.g, len(closed_nodes) + popped_closed_nodes
+                return path, int(curr_node.g), len(closed_nodes) + popped_closed_nodes
             closed_nodes[agent] = curr_node
             for action, succ in env.succ(agent).items():
                 env.reset()
