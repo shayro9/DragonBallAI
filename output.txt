@@ -1,0 +1,7 @@
+expanded: (0, False, False) number 1
+expanded: (2, False, False) number 2
+expanded: (1, True, False) number 3
+expanded: (0, True, False) number 4
+expanded: (3, True, True) number 5
+expanded: (2, True, True) number 6
+Give it another try :)

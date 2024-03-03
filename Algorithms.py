@@ -103,7 +103,6 @@ class WeightedAStarAgent():
         popped_closed_nodes = 0
         while open_nodes:
             agent, curr_node = open_nodes.popitem()
-
             if env.is_final_state(agent):
                 path = curr_node.get_path()
                 return path, int(curr_node.g), len(closed_nodes) + popped_closed_nodes
