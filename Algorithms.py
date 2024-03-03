@@ -238,18 +238,18 @@ class AStarEpsilonAgent():
                 new_f = h + new_g
 
                 if child_state not in open_nodes.keys() and child_state not in closed_nodes.keys():
-                    new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
+                    new_node = AStarEpsilonNode(child_state, curr_node, action, new_g, new_f)
                     open_nodes[child_state] = new_node
 
                 elif child_state in open_nodes.keys():
                     new_node = open_nodes[child_state]
                     if new_f < new_node.f:
-                        new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
+                        new_node = AStarEpsilonNode(child_state, curr_node, action, new_g, new_f)
                         open_nodes[child_state] = new_node
                 elif child_state in closed_nodes.keys():
                     new_node = closed_nodes[child_state]
                     if new_f < new_node.f:
-                        new_node = AStarNode(child_state, curr_node, action, new_g, new_f)
+                        new_node = AStarEpsilonNode(child_state, curr_node, action, new_g, new_f)
                         open_nodes[child_state] = new_node
                         closed_nodes.pop(child_state)
                         popped_closed_nodes += 1
